@@ -1,16 +1,18 @@
+import { AsyncStorage } from 'react-native';
 import { create } from 'apisauce';
+import { Actions } from 'react-native-router-flux';
+import { SubmissionError } from 'redux-form';
 
 const api = create({
-    // baseURL: "https://api.github.com",
-    // headers: { 'Accept': 'application/vnd.github.v3+json' }
-    baseURL: "https://msn-hr-system.herokuapp.com/api/v1",
+    //    baseURL: 'https://msn-hr-system.herokuapp.com/api/v1',
+    baseURL: 'https://hrsys-restless-koala.eu-gb.mybluemix.net/api/v1',
     // baseURL: "https://httpbin.org",
 
     headers: {
-        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI1YjI0ODM0NTE1NTUxZjU2ODU4MzQ0ZDQiLCJpYXQiOjE1MjkxMTk3MjV9.V4PC8Xr0kMr4OFq59mPS3EvcEMa9aAKtZvltKSa3b2o",
         'Accept': 'application/json',
-        "Content-Type": "Content-Type: application/json",
-    }
+        'Content-Type': 'application/json',
+    },
+    timeout: 30000
 });
 
 export const adduser = (values) => ({
@@ -19,41 +21,58 @@ export const adduser = (values) => ({
 });
 
 export const adduserredux = (values) => {
-    return dispatch => {
-        dispatch({ type: "Loading" });
-        console.log("Response form  Valuse", JSON.stringify(values));
+    return (dispatch, getState) => {
+        dispatch({ type: 'logging' });
+        console.log('Response form  Valuse', JSON.stringify(values));
+        api.setHeader('token', getState().users.token);
+        //https://msn-hr-system.herokuapp.com/api/v1/user
         api
-            .get('/user', JSON.stringify(values))
+            .post('/user', values)
             .then((r) => {
-                console.log('Response form ', r.data);
-                dispatch(adduser(r.data));
+                console.log('Response form adduser', r);
+                if (r.ok === true) {
+                    dispatch(adduser(r.data));
+                } else {
+                    dispatch(loginusererror(r));
+                    //throw new SubmissionError({ error: { 'email': 'ERROR' } });
+                    throw new SubmissionError({ email: 'ERROR' });
+                }
             })
             .catch((e) => console.log('submitting form Error ', e));
     };
 };
 
-export const loginuser = (values) => ({
+export const loginuser = (token) => ({
     type: 'Login User',
+    payload: token
+});
+
+export const LogoutToken = (token) => ({
+    type: 'Logout User Token',
+    payload: token
+});
+
+export const loginusererror = (values) => ({
+    type: 'Login Error',
     payload: values
 });
 
 
 export const loginuserredux = (values) => {
     return dispatch => {
-        dispatch({ type: "logging" });
-        console.log("Response form  Valuse", JSON.stringify(values));
+        dispatch({ type: 'logging' });
+        console.log('Requesting Login For', JSON.stringify(values));
         api
             .post('/login', JSON.stringify(values))
             .then((r) => {
-                console.log('Response sss form ', r.data);
-            })
-            .catch((e) => console.log('submitting form Error ', e));
-
-        api
-            .post('/login', values)
-            .then((r) => {
-                console.log('Response form ', r.data);
-                dispatch(loginuser(r.data));
+                console.log('Response form ', r);
+                if (r.ok === true) {
+                    // Save Current token
+                    AsyncStorage.setItem('@app:session', r.data.token);
+                    dispatch(loginuser(r.data.token));
+                } else {
+                    dispatch(loginusererror(r));
+                }
             })
             .catch((e) => console.log('submitting form Error ', e));
     };

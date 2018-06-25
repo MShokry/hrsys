@@ -1,23 +1,26 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import Expo from 'expo';
-import { View, KeyboardAvoidingView } from 'react-native';
-import { Container, Item, Input, Header, Body, Content, Title, Button, Text, Form, Label, Icon } from 'native-base';
+import { View, KeyboardAvoidingView, AsyncStorage } from 'react-native';
+import {
+  Container, Item, Input, Header,
+  Body, Content, Title, Button, Text,
+  Form, Label, Icon, Left, Right, Spinner
+} from 'native-base';
 import { Field, reduxForm } from 'redux-form';
-import { ScrollView } from 'react-native-gesture-handler';
 import { bindActionCreators } from 'redux';
-import { adduser,adduserredux } from './actions';
+import { Actions } from 'react-native-router-flux';
+import { LogoutToken, adduser, adduserredux } from './actions';
 
 const validate = values => {
   const error = {};
-  error.email = '';
-  error.username = '';
-  error.password = '';
-  error.fullname = '';
-  error.title = '';
-  error.sallary = '';
+  // error.email = '';
+  // error.username = '';
+  // error.password = '';
+  // error.name = '';
+  // error.title = '';
+  // error.sallary = '';
   let un = values.username;
-  let fn = values.fullname;
+  let fn = values.name;
   let ema = values.email;
 
   if (values.email === undefined) {
@@ -26,7 +29,7 @@ const validate = values => {
   if (values.username === undefined) {
     un = '';
   }
-  if (values.fullname === undefined) {
+  if (values.name === undefined) {
     fn = '';
   }
 
@@ -43,7 +46,7 @@ const validate = values => {
     error.username = 'Please enter username';
   }
   if (fn.length < 1) {
-    error.fullname = 'Please enter User full Name';
+    error.name = 'Please enter User full Name';
   }
   return error;
 };
@@ -51,10 +54,43 @@ const validate = values => {
 // const submit = values => {
 //   console.log('submitting form', values);
 // };
+
+
 export class UserAdd extends Component {
   constructor(props) {
     super(props);
     this.renderInput = this.renderInput.bind(this);
+  }
+  componentDidMount() {
+    console.log('Component mounted');
+    this.props.reset();
+  }
+
+  logout() {
+    //Clear Token
+    console.log("Logging out()");
+    this.props.LogoutToken(null);
+    AsyncStorage.removeItem('@app:session');
+    Actions.Login();
+    console.log("Logged out");
+  }
+
+  renderButton() {
+    if (this.props.user.logging !== undefined) {
+      if (this.props.user.logging === true) {
+        return (
+          <Spinner style={{ flex: 1, }} />
+        );
+      }
+    }
+    return (
+      <Button rounded primary
+        onPress={this.props.handleSubmit(this.props.submitin)}
+        style={{ flex: 1, }} >
+        <Icon active name="ios-add" />
+        <Text>ADD</Text>
+      </Button>
+    );
   }
 
   renderInput({ input, label, type, key, secure, meta: { touched, error, warning } }) {
@@ -70,17 +106,23 @@ export class UserAdd extends Component {
       </Item>
     );
   }
+
   render() {
+    //console.log(this.props);
+
     const { handleSubmit, reset } = this.props;
-    // console.log(this.props);
-
     return (
-
       <Container>
         <Header>
+          <Left></Left>
           <Body>
-            <Title>Redux Form</Title>
+            <Title>Add User</Title>
           </Body>
+          <Right>
+            <Button transparent onPress={() => this.logout()} >
+              <Icon active name="ios-log-out-outline" />
+            </Button>
+          </Right>
         </Header>
         <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
           <Content padder>
@@ -89,20 +131,17 @@ export class UserAdd extends Component {
               <Field key='1' name={'username'} label='User Name' component={this.renderInput} />
               <Field key='2' name={'password'} label='Password' secure component={this.renderInput} />
               <Field key='3' name={'email'} label='Email' component={this.renderInput} />
-              <Field key='4' name={'fullname'} label='Full Name' component={this.renderInput} />
+              <Field key='4' name={'name'} label='Full Name' component={this.renderInput} />
               <Field key='5' name={'title'} label='Title' component={this.renderInput} />
               <Field key='6' name={'sallary'} label='Sallary' component={this.renderInput} />
-
-            <View style={{ flexDirection: "row", paddingTop: 20, }}>
-              <Button rounded primary onPress={handleSubmit(this.props.submitin)} style={{ flex: 1, }} >
-                <Icon active name="ios-add" />
-                <Text>Add</Text>
-              </Button>
-              <Button rounded danger onPress={reset} style={{ flex: 1, }} >
-                <Icon active name="trash" />
-                <Text>Reset</Text>
-              </Button>
-            </View>
+              <Text style={{ color: 'red', alignContent: 'center', flex: 1 }} >{this.props.user.errors.message}</Text>
+              <View style={{ flexDirection: "row", paddingTop: 20, }}>
+                {this.renderButton()}
+                <Button rounded danger onPress={reset} style={{ flex: 1, }} >
+                  <Icon active name="trash" />
+                  <Text>Reset</Text>
+                </Button>
+              </View>
             </Form>
             {/* </ScrollView> */}
           </Content>
@@ -112,16 +151,17 @@ export class UserAdd extends Component {
   }
 }
 function mapStateToProps(state, ownProps) {
-  user: state.users
-
+  return {
+    user: state.users
+  };
 }
 
-const mapDispatchToProps = (dispatch) => {
+const mapDispatchToProps = (dispatch, getState) => {
   return bindActionCreators({
     submitin: adduserredux,
-
-  }, dispatch);
+    LogoutToken
+  }, dispatch, getState);
 };
 
 UserAdd = connect(mapStateToProps, mapDispatchToProps, null, { withRef: true })(UserAdd);
-export default reduxForm({ form: 'add', validate })(UserAdd);
+export default reduxForm({ form: 'adduser', validate })(UserAdd);

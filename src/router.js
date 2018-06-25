@@ -1,11 +1,12 @@
 import React, { Component } from 'react';
+import { AsyncStorage } from 'react-native';
 import { Router, Scene } from 'react-native-router-flux';
-import {Root} from 'native-base';
-// import { Container, Text,  } from 'native-base';
+import { Root } from 'native-base';
+import { Font, AppLoading } from 'expo';
+
 import Welcome from './welcome';
 import UserAdd from './Useradd';
 import Login from './login';
-import { Font, AppLoading } from 'expo';
 
 class Rutes extends Component {
   constructor(props) {
@@ -14,15 +15,17 @@ class Rutes extends Component {
   }
 
   async componentWillMount() {
+    //Load Fonts
     await Font.loadAsync({
       Roboto: require("native-base/Fonts/Roboto.ttf"),
       Roboto_medium: require("native-base/Fonts/Roboto_medium.ttf")
     });
+    // Load Data From Storage
     this.setState({ loading: false });
-  }
+  };
 
   render() {
-    console.log("test5");
+    console.log('test4');
     if (this.state.loading) {
       return (
         <Root>
@@ -34,11 +37,9 @@ class Rutes extends Component {
     return (
       <Router hideNavBar={true} >
         <Scene key="root">
-          <Scene key="Welcome" component={Welcome} title="Welcome"  hideNavBar1={true} />
-          <Scene key="UserAdd" component={UserAdd} title="Adding"  hideNavBar={true} 
-          onSubmit={(values) => alert.alert('Submitted!', JSON.stringify(values))}
-          />
-          <Scene key="Login" component={Login} initial={true} title="Login" />
+          <Scene key="Welcome" component={Welcome} title="Welcome"  hideNavBar={true} />
+          <Scene key="UserAdd" component={UserAdd} title="Adding"  hideNavBar={true} />
+          <Scene key="Login" component={Login} initial={true} title="Login"/>
         </Scene>
       </Router>
     );
